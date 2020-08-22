@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--
+        Notes Time
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes Time</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0; /* Here the margin will affect all */
+            padding: 0;
+        }
+
+        body {
+            /* background-color: aquamarine; */
+            font-family: Times, 'Times New Roman', serif;
+        }
+
+        header {
+            padding: 1px;
+            height: 90px;
+            /* border: 2px solid blue; */
+            text-align: center;
+            background-color: aquamarine;
+            background-image: linear-gradient(rgb(201, 192, 192), rgb(111, 194, 144));
+            /* position: fixed;
+            top: 0;
+            width: 100% */
+        }
+
+        footer {
+            background-image: linear-gradient(rgb(102, 95, 95), rgb(111, 194, 144));
+            padding: 10px;
+            /* border: 2px solid blue; */
+            text-align: center;
+            background-color: aquamarine;
+        }
+
+        #sectionmain {
+            background-color: rgb(240, 218, 211);
+            background-image: linear-gradient(lightblue, lightgreen);
+            min-height: 60vh;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .notewrapper {
+            height: 200px;
+            width: 180px;
+            margin: 5px;
+            border: 2px solid red;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 5px 5px;
+        }
+
+        .noteheader {
+            background-image: linear-gradient(red, orange);
+            width: 90%;
+        }
+
+        .inputnotetitleclass {
+            width: 60%;
+        }
+
+        .textareanoteclass {
+            width: 100%;
+            height: 120px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Javascript check -->
+    <noscript>To use this site, please enable Javascript</noscript>
+
+    <header>
+        <h1>Notes Time</h1>
+        <br>
+        <button type="button" onclick="funcAdd()">New Note</button>
+    </header>
+
+    <template id="templateid">
+        <div class="notewrapper">
+            <div class="noteheader">
+                <h3>Title: <input type="text" class="inputnotetitleclass" name="inputnotetitlename" onchange="funcModifyTitle(this.name, this.value)"></h3>
+            </div>
+            <div class="note">
+                <!-- <textarea class="textareanoteclass" name="textareanotename"rows="4" cols="50"></textarea> -->
+                <textarea class="textareanoteclass" name="textareanotename" onchange="funcModifyNote(this.name, this.value)"></textarea>
+            </div>
+            <div class="notefooter">
+                <button type="button" class="btndelete" onclick="funcDelete(this.value)">Delete</button>
+            </div>
+        </div>
+    </template>
+
+    <section id="sectionmain"></section>
+
+    <footer>
+        <h2>Have fun!</h2>
+        <br>
+        <button type="button" onclick="funcDeleteAll()">Delete all notes</button>
+    </footer>
+    <script>
+        // Show all data from a Javascript Object through a <template>
+            function funcShowAllNotes() {
+            const notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+            const noteTemplate = document.querySelector("#templateid");
+            const noteSection = document.querySelector("#sectionmain");
+
+            for (key in notesTimeObject) {
+                const noteTemplateInstance = document.importNode(noteTemplate.content, true);
+                noteTemplateInstance.querySelector(".inputnotetitleclass").value = notesTimeObject[key].title;
+                noteTemplateInstance.querySelector(".inputnotetitleclass").name = key; // For modify
+                noteTemplateInstance.querySelector(".textareanoteclass").value = notesTimeObject[key].note;
+                noteTemplateInstance.querySelector(".textareanoteclass").name = key; // For modify
+                noteTemplateInstance.querySelector(".btndelete").value = key; // For delete
+                noteSection.appendChild(noteTemplateInstance);
+            }
+        }
+        
+        // If no Notes, initialize
+        function funcInitializeNewNotes() {
+            // Javascript seems to convert automaticly a JSON to Object
+            // So no need to const initializeJSONObject = JSON.parse(initializeJSON);
+            const initializeJSON = {
+                "a": {"title": "New Title A", "note": "New Note A"},
+                "b": {"title": "New Title B", "note": "New Note B"}
+            };
+            
+            localStorage.setItem("notesTimeJSON", JSON.stringify(initializeJSON));
+            funcShowAllNotes();
+        }
+
+        // Auto called at the first open
+        document.addEventListener("DOMContentLoaded", () => {
+            // Check for localStorage browser support
+            if (typeof(Storage) !== "undefined") {
+                console.log("Your browser does support Web Storage");
+
+                // Check if the key in localStorage exists, if yes initialize the page with the notes
+                // Must check, may be the user delete all notes with the delecte button and not with
+                // the Delete All button, in this case notesTimeJSON is empty
+                if("notesTimeJSON" in localStorage){
+                    console.log("The localStorage key exists");
+                    notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+
+                    // It Works: JSON.stringify(obj) === '{}'
+                    // Not: Object.keys(notesTimeObject).length === 0
+                    if(JSON.stringify(notesTimeObject) === '{}') {
+                        // Initialize new notes
+                        funcInitializeNewNotes();
+                    } else {
+                        funcShowAllNotes();
+                    }
+                } else { 
+                    // Initialize new notes
+                    funcInitializeNewNotes();
+                }
+            } else {
+                alert("Sorry, your browser localStorage is not enabled. To use this site you must enable it and reload the page");
+            }
+        });
+
+        // Add a new note
+        function funcAdd() {
+            let notesTimeObject = new Object;
+
+            // If notesTimeJSON existe
+            if (localStorage.getItem("notesTimeJSON")) {
+                notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+            }
+            
+            const aDate = new Date();
+            const keyData = aDate.toString();
+            const theData = {title: "", note: ""};
+            notesTimeObject[keyData] = theData;
+            localStorage.setItem("notesTimeJSON", JSON.stringify(notesTimeObject));
+
+            document.querySelector("#sectionmain").innerHTML = "";
+            // Another way way to do the same
+            // let element = document.querySelector("#sectionmain");
+            //     while (element.firstChild) {
+            //         element.removeChild(element.firstChild);
+            //     }
+
+            funcShowAllNotes();
+        }
+
+        // Modify the title
+        function funcModifyTitle(notekey, title) {
+            notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+            notesTimeObject[notekey].title = title;
+            localStorage.setItem("notesTimeJSON", JSON.stringify(notesTimeObject));
+        }
+
+        // Modify the note
+        function funcModifyNote(notekey, note) {
+            notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+            notesTimeObject[notekey].note = note;
+            localStorage.setItem("notesTimeJSON", JSON.stringify(notesTimeObject));
+        }
+
+        // Delete a note
+        function funcDelete(notekey) {
+            notesTimeObject = JSON.parse(localStorage.getItem("notesTimeJSON"));
+            delete notesTimeObject[notekey];
+            localStorage.setItem("notesTimeJSON", JSON.stringify(notesTimeObject));
+
+            document.querySelector("#sectionmain").innerHTML = "";
+            // Another way way to do the same
+            // let element = document.querySelector("#sectionmain");
+            //     while (element.firstChild) {
+            //         element.removeChild(element.firstChild);
+            //     }
+
+            funcShowAllNotes();
+        }
+
+        // Delete all notes
+        function funcDeleteAll() {
+            localStorage.removeItem("notesTimeJSON");
+
+            // Two ways the delete all elemet child
+            document.querySelector("#sectionmain").innerHTML = "";
+
+            // Another way way to do the same
+            // let element = document.querySelector("#sectionmain");
+            //     while (element.firstChild) {
+            //         element.removeChild(element.firstChild);
+            //     }
+            }
+    </script>
+</body>
+</html>
